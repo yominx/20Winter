@@ -6,13 +6,13 @@ void SIFT::ExtractKeypointDescriptors()
 	cv::Mat*** imgInterpolMag = new cv::Mat** [m_numOctaves];
 	cv::Mat*** imgInterpolOri = new cv::Mat** [m_numOctaves];
 	for(i=0;i<m_numOctaves;i++){
-		imgInterpolMag[i] = new cv::Mat* [m_numIntervals];
-		imgInterpolOri[i] = new cv::Mat* [m_numIntervals];
+		imgInterpolMag[i] = new cv::Mat* [BLUR_NUM];
+		imgInterpolOri[i] = new cv::Mat* [BLUR_NUM];
 	}
 
 	// These two loops calculate the interpolated thingy for all octaves and subimages
 	for(int i=0;i<m_numOctaves;i++){
-	for(int j=0;j<m_numIntervals;j++){
+	for(int j=0;j<BLUR_NUM;j++){
 
 		// Scale up. This will give us access to in betweens		
 		int width  = octave[i][j].size().width;
@@ -30,8 +30,8 @@ void SIFT::ExtractKeypointDescriptors()
 			int dy = (octave[i][j].at<uchar>(jj+1, ii) - octave[i][j].at<uchar>(jj-1, ii)) /2;
 
 			// Set the magnitude and orientation
-			imgInterpolMag[i][j].at<uchar>(2*jj+1, 2*ii+1, sqrt(dx*dx + dy*dy));
-			imgInterpolOri[i][j].at<uchar>(2*jj+1, 2*ii+1, (atan2(dy,dx)==M_PI) ? -M_PI : atan2(dy,dx) );
+			imgInterpolMag[i][j].at<uchar>(jj+1, ii+1, sqrt(dx*dx + dy*dy));
+			imgInterpolOri[i][j].at<uchar>(jj+1, ii+1, (atan2(dy,dx)==M_PI) ? -M_PI : atan2(dy,dx) );
 		}
 		}
 
@@ -51,54 +51,49 @@ void SIFT::ExtractKeypointDescriptors()
 	// Lowe suggests sigma should be half the window size
 	// This is used to construct the "circular gaussian window" to weight 
 	// magnitudes
-	CvMat *G = BuildInterpolatedGaussianTable(FEATURE_WINDOW_SIZE, 1*FEATURE_WINDOW_SIZE);
+	cv::Mat *G = BuildInterpolatedGaussianTable(FEATURE_WINDOW_SIZE, 0.5*FEATURE_WINDOW_SIZE);
 	
 	vector<double> hist(DESC_NUM_BINS);
 
 	// Loop over all keypoints
-	for(int ikp = 0;ikp < m_numKeypoints;ikp++)
-	{
-		int scale = m_keyPoints[ikp].scale;
-		float kpxi = m_keyPoints[ikp].xi;
-		float kpyi = m_keyPoints[ikp].yi;
+	for(int ikp = 0;ikp < m_numKeypoints;ikp++){
+		int   scale = keyPoints[ikp].scale;
+		float keyPx = keyPoints[ikp].xi;
+		float keyPy = keyPoints[ikp].yi;
 
-		float descxi = kpxi;
-		float descyi = kpyi;
+		float descxi = keyPx;
+		float descyi = keyPy;
 
-		int ii = (int)(kpxi*2) / (int)(pow(2.0, (double)scale/m_numIntervals));
-		int jj = (int)(kpyi*2) / (int)(pow(2.0, (double)scale/m_numIntervals));
+		int ii = (int)(keyPx*2) / (int)(pow(2.0, (double)scale/BLUR_NUM));
+		int jj = (int)(keyPy*2) / (int)(pow(2.0, (double)scale/BLUR_NUM));
 
-		int width = octave[scale/m_numIntervals][0]->width;
-		int height = octave[scale/m_numIntervals][0]->height;
+		int width  = octave[scale/BLUR_NUM][0].size().width;
+		int height = octave[scale/BLUR_NUM][0].size().height;
 
 		vector<double> orien = m_keyPoints[ikp].orien;
-		vector<double> mag = m_keyPoints[ikp].mag;
+		vector<double> mag   = m_keyPoints[ikp].mag;
 
 		// Find the orientation and magnitude that have the maximum impact
 		// on the feature
 		double main_mag = mag[0];
 		double main_orien = orien[0];
-		for(int orient_count=1;orient_count<mag.size();orient_count++)
-		{
-			if(mag[orient_count]>main_mag)
-			{
+		for(int orient_count=1;orient_count<mag.size();orient_count++){
+			if(mag[orient_count]>main_mag){
 				main_orien = orien[orient_count];
 				main_mag = mag[orient_count];
 			}
 		}
 
 		int hfsz = FEATURE_WINDOW_SIZE/2;
-		CvMat *weight = cvCreateMat(FEATURE_WINDOW_SIZE, FEATURE_WINDOW_SIZE, CV_32FC1);
+		cv::Mat weight(FEATURE_WINDOW_SIZE, FEATURE_WINDOW_SIZE, CV_32FC1);
 		vector<double> fv(FVSIZE);
 
-		for(i=0;i<FEATURE_WINDOW_SIZE;i++)
-		{
-			for(j=0;j<FEATURE_WINDOW_SIZE;j++)
-			{
+		for(i=0;i<FEATURE_WINDOW_SIZE;i++){
+			for(j=0;j<FEATURE_WINDOW_SIZE;j++){
 				if(ii+i+1<hfsz || ii+i+1>width+hfsz || jj+j+1<hfsz || jj+j+1>height+hfsz)
                     cvSetReal2D(weight, j, i, 0);
 				else
-					cvSetReal2D(weight, j, i, cvGetReal2D(G, j, i)*cvGetReal2D(imgInterpolMag[scale/m_numIntervals][scale%m_numIntervals], jj+j+1-hfsz, ii+i+1-hfsz));
+					cvSetReal2D(weight, j, i, cvGetReal2D(G, j, i)*cvGetReal2D(imgInterpolMag[scale/BLUR_NUM][scale%BLUR_NUM], jj+j+1-hfsz, ii+i+1-hfsz));
 			}
 		}
 
@@ -107,10 +102,8 @@ void SIFT::ExtractKeypointDescriptors()
 
 		// The next two two loops are for splitting the 16x16 window
 		// into sixteen 4x4 blocks
-		for(i=0;i<FEATURE_WINDOW_SIZE/4;i++)			// 4x4 thingy
-		{
-			for(j=0;j<FEATURE_WINDOW_SIZE/4;j++)
-			{
+		for(i=0;i<FEATURE_WINDOW_SIZE/4;i++){
+			for(j=0;j<FEATURE_WINDOW_SIZE/4;j++){
 				// Clear the histograms
 				for(int t=0;t<DESC_NUM_BINS;t++)
 					hist[t]=0.0;
@@ -130,7 +123,7 @@ void SIFT::ExtractKeypointDescriptors()
 							continue;
 
 						// This is where rotation invariance is done
-						double sample_orien = cvGetReal2D(imgInterpolOri[scale/m_numIntervals][scale%m_numIntervals], t, k);
+						double sample_orien = cvGetReal2D(imgInterpolOri[scale/BLUR_NUM][scale%BLUR_NUM], t, k);
 						sample_orien -= main_orien;
 
 						while(sample_orien<0)
@@ -198,7 +191,7 @@ void SIFT::ExtractKeypointDescriptors()
 	// Get rid of memory we don't need anylonger
 	for(i=0;i<m_numOctaves;i++)
 	{
-		for(j=0;j<m_numIntervals;j++)
+		for(j=0;j<BLUR_NUM;j++)
 		{
 			cvReleaseImage(&imgInterpolMag[i][j]);
 			cvReleaseImage(&imgInterpolOri[i][j]);
