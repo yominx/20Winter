@@ -11,14 +11,18 @@
 using namespace cv;
 using namespace std;
 
-#define OCT_NUM     5
-#define BLUR_NUM    5
-#define MIN_BRIGHT  2
-#define MIN_CURVE   10
-#define NUM_BINS    16
+#define OCT_NUM         5
+#define BLUR_NUM        5
+#define MIN_BRIGHT      2
+#define MIN_CURVE       10
+#define NUM_BINS        16
 #define MAX_KERNEL_SIZE 20
-#define M_PI        3.14159265358979323846
-#define CUT_OFF     0.001
+#define M_PI            3.14159265358979323846
+#define CUT_OFF         0.001
+#define DESC_NUM_BINS   8
+#define FVSIZE          128
+#define FV_THRESHOLD    0.2
+
 
 void makeOctave(Mat& mat, Size size);
 
@@ -31,13 +35,28 @@ void AssignOrientations();
     void saveKeyP(Mat& imgWeight, int width, int height, int i, int j);
 
 void ExtractKeypointDescriptors();
+    cv::Mat* SIFT::BuildInterpolatedGaussianTable(int size, double sigma);
+    double SIFT::gaussian2D(double x, double y, double sigma);
 
-//const auto
 char window_name[] = "SIFT test";
 cv::Mat octave[OCT_NUM][BLUR_NUM], dogList[OCT_NUM][BLUR_NUM-1], extImg[OCT_NUM][BLUR_NUM-3];
 vector<Keypoint> keyPoints;
+vector<Descriptor> keyDescs;
 double absSigma[OCT_NUM];
 
+class Descriptor{
+    public:
+        float           xi, yi;     // The location
+        vector<double>  fv;         // The feature vector
+
+        Descriptor(){}
+
+        Descriptor(float x, float y, vector<double> const& f){
+            xi = x;
+            yi = y;
+            fv = f;
+        }
+    };
 class Keypoint{
     public:
         float           xi;
@@ -46,17 +65,16 @@ class Keypoint{
         vector<double>  orien;  // The list of orientations detected
         unsigned int    scale;  // The scale where this was detected
 
-        Keypoint() { }
+        Keypoint() {}
         Keypoint(float x, float y) { xi=x; yi=y; }
-        Keypoint(float x, float y, vector<double> const& m, vector<double> const& o, unsigned int s)
-        {
+        Keypoint(float x, float y, vector<double> const& m, vector<double> const& o, unsigned int s){
             xi = x;
             yi = y;
             mag = m;
             orien = o;
             scale = s;
         }
-};
+    };
 
 
 int main(int argc, char * argv[]) 
@@ -161,8 +179,8 @@ void isExtrema(Mat& up, Mat& target, Mat& down, Size size, int i, int j){
     double dxx, dyy, dxy, trH, detH, curvature_ratio;
     cout << size ;
     int number = 0,dark = 0, edge = 0;
-    for(int i = 1; i < size.width-2 ;i++){
-        for(int j = 1; j < size.height-2 ; j++){
+    for(int i = 1; i < size.width-1 ;i++){
+        for(int j = 1; j < size.height-1 ; j++){
             curPix = target.at<uchar>(j,i);
             if ((up.at<uchar>(j-1,i-1)    > curPix && up.at<uchar>(j,i-1)    > curPix && up.at<uchar>(j+1,i-1)     > curPix &&
                 up.at<uchar>(j-1,i  )     > curPix && up.at<uchar>(j,i)      > curPix && up.at<uchar>(j+1,i  )     > curPix &&
@@ -219,7 +237,7 @@ void isExtrema(Mat& up, Mat& target, Mat& down, Size size, int i, int j){
 
 void AssignOrientations(){
     cout << endl << "!! Assigning Orientations !!" << endl;
-    cv::Mat*** magnitude    = new cv::Mat** [OCT_NUM],
+    cv::Mat*** magnitude    = new cv::Mat** [OCT_NUM];
     cv::Mat*** orientations = new cv::Mat** [OCT_NUM];
 
     // Allocate memory
@@ -230,14 +248,12 @@ void AssignOrientations(){
 
     for (i=0;i<OCT_NUM;i++){
         for (j=0;j<BLUR_NUM;j++){
-            magnitude[i][j]  (octave[i][0].size(),CV_32FC1);
+                magnitude[i][j](octave[i][0].size(),CV_32FC1);
             orientation[i][j](octave[i][0].size(),CV_32FC1);
             makeMagAndOri(magnitudep[i][j], orientation[i][j], i, j)
             }
         }
-    
-    
-    
+
     for(i=0;i<OCT_NUM;i++){
         // Store current scale, width and height
         unsigned int scale = (int)pow(2.0, (double)i);
@@ -277,6 +293,7 @@ int GetKernelSize(double sigma){
 }
 
 void makeMagAndOri(Mat& imgMask, Mat& imgWeight, Mat& mag, Mat& ori, int i, int j, int scale){
+    int norm255;
     for(xi=1;xi < octave[i][j].size().width-1;xi++){
         for(yi=1;yi < octave[i][j].size().height-1;yi++){
             // Calculate gradient
@@ -289,17 +306,17 @@ void makeMagAndOri(Mat& imgMask, Mat& imgWeight, Mat& mag, Mat& ori, int i, int 
             if (dx==0)
                 dy>0 ? angRadian = 0.5*math.pi : angRadian = -0.5 * math.pi;
             else 
-                angRadian = atan(dy/dx);
+                angRadian = atan2(dy, dx);
 
 
-            double norm255 = (angRadian/math.pi + 0.5) * 255.0;
-            if (norm255 >= 255.0) norm255-=255.0; 
-            if (norm255 < 0.0)   norm255+=255.0;
+            norm255 = (int)(255.0 * (atan2(dy,dx) + M_PI) / 2.0/M_PI); 
+            if (norm255 >= 256) norm255-=256; 
+            if (norm255 < 0)   norm255+=256;
 
             ori.at<uchar>(yi, xi) = norm255;
             }
         }
-}
+    }
 
 void saveKeyP(Mat& imgWeight, int width, int height, int i, int j){
     double hist_orient[NUM_BINS];
@@ -375,11 +392,12 @@ void saveKeyP(Mat& imgWeight, int width, int height, int i, int j){
                 while(x0 >= NUM_BINS)
                     x0-= NUM_BINS;
             }
-                // Normalize it, convert -PI ~ PI
-                double x0_n = x0 * (2*M_PI/NUM_BINS);
-                x0_n -= M_PI;
+                // Normalize it, convert 0~255
+                int ori255 = (int)( x0 * (256/NUM_BINS) );
+                if (ori255 >= 256) norm255-=256; 
+                if (ori255 < 0)    norm255+=256;
 
-                orien.push_back(x0_n);
+                orien.push_back(ori255);
                   mag.push_back(hist_orient[k]);
             }
         }
@@ -389,9 +407,250 @@ void saveKeyP(Mat& imgWeight, int width, int height, int i, int j){
         }
         }
         }
+    }
+
+
+void SIFT::ExtractKeypointDescriptors(){
+    printf("Extract keypoint descriptors...\n");
+
+    vector<double> orien, mag;
+    int width, height, scale, octInd, blurInd, targetX, targetY, curX, curY;
+    int i, j, ii, jj, starti, startj, limiti, limitj, t;
+    float keyPx,keyPy, descxi, descyi;
+    double dx, dy, main_mag, main_orien, sample_orien, actBin;
+    int halfSize = FEATURE_WINDOW_SIZE/2;
+    int oneBlockSize = FEATURE_WINDOW_SIZE/4;
+    int bin, norm255;
+
+    // Allocate magnitudes and orientations
+    cv::Mat*** imgInterpolMag = new cv::Mat** [m_numOctaves];
+    cv::Mat*** imgInterpolOri = new cv::Mat** [m_numOctaves];
+    for(i=0;i<m_numOctaves;i++){
+        imgInterpolMag[i] = new cv::Mat* [BLUR_NUM];
+        imgInterpolOri[i] = new cv::Mat* [BLUR_NUM];
+        }
+
+    // These two loops calculate the interpolated thingy for all octaves and subimages
+    for(i=0;i<OCT_NUM; i++){
+    for(j=0;j<BLUR_NUM;j++){
+
+        // Scale up. This will give us access to in betweens        
+        width  = octave[i][j].size().width;
+        height = octave[i][j].size().height;
+
+        // Allocate memory
+        imgInterpolMag[i][j](width, height, 32, 1);
+        imgInterpolOri[i][j](width, height, 32, 1);
+
+        // Do the calculations
+        for(ii=0; ii<width -1; ii++){
+        for(jj=0; jj<height-1; jj++){
+            // "inbetween" change
+            // 01 11  ---\
+            // 00 10  ---/ 0,0
+            dx = (octave[i][j].at<uchar>(jj+1, ii+1) + octave[i][j].at<uchar>(jj, ii+1) - octave[i][j].at<uchar>(jj+1, ii) - octave[i][j].at<uchar>(jj, ii))/2;
+            dy = (octave[i][j].at<uchar>(jj+1, ii+1) + octave[i][j].at<uchar>(jj+1, ii) - octave[i][j].at<uchar>(jj, ii+1) - octave[i][j].at<uchar>(jj, ii))/2;
+            imgInterpolMag[i][j].at<uchar>(jj, ii) = sqrt(dx*dx + dy*dy);
+            if (atan2(dy,dx) == M_PI)
+                norm255 = 0;
+            else 
+                norm255 = (int)(255.0 * (atan2(dy,dx) + M_PI) / 2.0/M_PI);
+
+            imgInterpolOri[i][j].at<uchar>(jj, ii) = norm255;
+            }
+            }
+
+        // Pad the edges with zeros
+        for(ii=0;ii<width;ii++){
+            imgInterpolMag[i][j].at<uchar>(height, ii, 0);
+            imgInterpolOri[i][j].at<uchar>(height, ii, 0);
+            }
+        for(jj=0;jj<height;jj++){
+            imgInterpolMag[i][j].at<uchar>(jj, width, 0);
+            imgInterpolOri[i][j].at<uchar>(jj, width, 0);
+            }
+        }
+        }
+
+    cv::Mat *G = BuildInterpolatedGaussianTable(FEATURE_WINDOW_SIZE, 0.5*FEATURE_WINDOW_SIZE);
+    vector<double> hist(DESC_NUM_BINS);
+
+    // Loop over all keypoints
+    for(int ikp = 0;ikp < m_numKeypoints;ikp++){
+        scale   = keyPoints[ikp].scale;
+        keyPx   = keyPoints[ikp].xi; descxi  = keyPx;
+        keyPy   = keyPoints[ikp].yi; descyi  = keyPy;
+
+        octInd  = scale/BLUR_NUM;
+        blurInd = scale%BLUR_NUM;
+
+        // position of the exact size picture
+        targetX = (int)(keyPx*2) / (int)(pow(2.0, (double)octInd));
+        targetY = (int)(keyPy*2) / (int)(pow(2.0, (double)octInd));
+
+        width  = octave[octInd][0].size().width;
+        height = octave[octInd][0].size().height;
+
+        orien = keyPoints[ikp].orien;
+        mag   = keyPoints[ikp].mag;
+
+        // Find the orientation and magnitude that have the "maximum impact"
+        // on the feature
+        main_mag   = mag[0];
+        main_orien = orien[0];
+        for(int orient_count=1;orient_count < mag.size();orient_count++){
+            if(mag[orient_count] > main_mag){
+                main_orien  = orien[orient_count];
+                main_mag    = mag[orient_count];
+                }
+            }
+
+        cv::Mat weight(FEATURE_WINDOW_SIZE, FEATURE_WINDOW_SIZE, CV_32FC1);
+        vector<double> fv(FVSIZE);
+
+        for(i=0;i<FEATURE_WINDOW_SIZE;i++){
+        for(j=0;j<FEATURE_WINDOW_SIZE;j++){
+            //out of boundary
+            if(targetX-halfSize+i < 0 || targetX-halfSize+i > width ||
+               targetY-halfSize+j < 0 || targetY-halfSize+j > height)
+                weight.at<uchar>(j, i) = 0;
+            else
+                weight.at<uchar>(j, i) = G.at<uchar>(j, i) *
+                                            magnitude[octInd][blurInd].at<uchar>(targetY - halfSize + j, targetX - halfSize + i);
+            }
+            }
+
+        // Now that we've weighted the required magnitudes, we proceed to generating
+        // the feature vector
+
+        // The next two two loops are for splitting the 16x16 window
+        // into sixteen 4x4 blocks
+        assert(FEATURE_WINDOW_SIZE%4 == 0);
+        for(i=0;i<oneBlockSize;i++){
+        for(j=0;j<oneBlockSize;j++){
+            // Clear the histograms
+            for(int t=0;t < DESC_NUM_BINS;t++)
+                hist[t]=0.0;
+
+            // Calculate the coordinates of the 4x4 block
+            starti = targetX - halfSize + oneBlockSize*i;
+            startj = targetY - halfSize + oneBlockSize*j;
+            limiti = starti + oneBlockSize;
+            limitj = startj + oneBlockSize;
+
+            // Go though this 4x4 block and do the thingy :D
+            for(curX = starti;k < limiti;k++){
+            for(curY = startj;t < limitj;t++){
+                if(curX<0 || curX>=width || curY<0 || curY>=height)
+                    continue;
+
+                // Independent from rotation
+                sample_orien  = imgInterpolOri[octInd][blurInd].at<uchar>(curY, curX);
+                sample_orien -= main_orien;
+                // SAMPLE_ORIEN is 255 uchar scale
+                while(sample_orien < 0)
+                    sample_orien += 256;
+
+                while(sample_orien >= 256)
+                    sample_orien -= 256;
+
+                actBin  = (double)(sample_orien*DESC_NUM_BINS/360.0);       // The actual entry
+                bin = (int)Bin
+                //bin   = sample_orien * DESC_NUM_BINS/256;                         // The bin
+
+
+                // Add to the bin
+                hist[bin] += (1.0-fabs(actBin-(bin+0.5))) * weight.at<uchar>(curY-targetY + halfSize, curX-targetX + halfSize);
+                }
+                }
+
+            // Keep adding these numbers to the feature vector
+            int inBlockInd = i*oneBlockSize + j; 
+            for(int t=0;t<DESC_NUM_BINS;t++)
+                fv[inBlockInd*DESC_NUM_BINS+t] = hist[t];
+            }
+            }
+
+        // Now, normalize the feature vector to ensure illumination independence
+        double norm=0;
+        for(t=0;t<FVSIZE;t++)
+            norm+=pow(fv[t], 2.0);
+
+        norm = sqrt(norm);
+        for(t=0;t<FVSIZE;t++)
+            fv[t]/=norm;
+
+        // Now, threshold the vector
+        for(t=0;t<FVSIZE;t++)
+            if(fv[t]>FV_THRESHOLD)
+                fv[t] = FV_THRESHOLD;
+
+        // Normalize again
+        norm=0;
+        for(t=0;t<FVSIZE;t++)
+            norm+=pow(fv[t], 2.0);
+
+        norm = sqrt(norm);
+        for(t=0;t<FVSIZE;t++)
+            fv[t]/=norm;
+
+        // We're done with this descriptor. Store it into a list
+        keyDescs.push_back(Descriptor(keyPx, keyPy, fv));
+        }
+    
+    // Get rid of memory we don't need anylonger
+    for(i=0;i<OCT_NUM;i++){
+        for(j=0;j<BLUR_NUM;j++){
+            imgInterpolMag[i][j].release();
+            imgInterpolOri[i][j].release();
+            }
+        delete [] imgInterpolMag[i];
+        delete [] imgInterpolOri[i];
+        }
+    delete [] imgInterpolMag;
+    delete [] imgInterpolOri;
+    }
+
+// GetKernelSize()
+// Returns the size of the kernal for the Gaussian blur given the sigma and
+// cutoff value.
+
+
+// BuildInterpolatedGaussianTable()
+// This function actually generates the bell curve like image for the weighted
+// addition earlier.
+cv::Mat* SIFT::BuildInterpolatedGaussianTable(int size, double sigma){
+    int i, j;
+    double half_kernel_size = size/2 - 0.5;
+
+    double sog=0;
+    cv::Mat ret(size, size, CV_32FC1);
+
+    assert(size%2==0);
+
+    double temp=0;
+    for(i=0; i<size; i++){
+        for(j=0; j<size; j++){
+            //center : 4 cells. i.e. 8 X 8->[1~8][1~8] -> [4~5][4~5]
+            temp = gaussian2D(i-half_kernel_size, j-half_kernel_size, sigma);
+            ret.at<uchar>(j, i) = temp;
+            sog+=temp;
+        }
+    }
+
+    for(i=0;i<size;i++)
+        for(j=0;j<size;j++)
+            ret.at<uchar>(j, i) /= sog;
+
+    return ret;
+}
+
+// gaussian2D
+// Returns the value of the bell curve at a (x,y) for a given sigma
+double SIFT::gaussian2D(double x, double y, double sigma)
+{
+    double ret = 1.0/(2*M_PI*sigma*sigma) * exp(-(x*x+y*y)/(2.0*sigma*sigma));
+    return ret;
 }
 
 
-void ExtractKeypointDescriptors(){
-    cout << endl << "!! Extracting Keypoint Descriptors !!" << endl;
-}
