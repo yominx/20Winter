@@ -13,7 +13,7 @@ using namespace std;
 
 #define OCT_NUM         5
 #define BLUR_NUM        5
-#define MIN_BRIGHT      2
+#define MIN_BRIGHT      6
 #define MIN_CURVE       10
 #define NUM_BINS        16
 #define MAX_KERNEL_SIZE 20
@@ -33,8 +33,9 @@ void DetectExtrema();
 void AssignOrientations();
     void makeMagAndOri(Mat* mag, Mat* ori, int i, int j);
     int  GetKernelSize(double sigma);
-    void saveKeyP(Mat& imgWeight, int width, int height,
-    Mat* magnitude, Mat* orientation, int i, int j, int scale, int sizeK);
+    int chkKeyPoint(int i, int xi, int yi);
+    void saveKeyP(Mat& imgWeight, Mat* magnitude, Mat* orientation,
+                                     int i, int j, int scale, int sizeK);
     //void saveKeyP(Mat& imgWeight, int width, int height, int i, int j);
 
 void ExtractKeypointDescriptors();
@@ -233,7 +234,7 @@ void isExtrema(Mat& up, Mat& target, Mat& down, Size size, int x, int y){
 
     //imshow(window_name, extImg[x][y]);
     printf("Found %d keypoints\n", number);
-    printf("Rejected keypoints\ndark : %d\nedge : %d", dark,edge);
+    printf("Rejected keypoints\ndark : %d\nedge : %d\n", dark,edge);
     //waitKey(0);
     }
 
@@ -271,7 +272,7 @@ void AssignOrientations(){
             int sizeK = GetKernelSize(1.5*abs_sigma)/2;
             if (sizeK%2==0) sizeK++;      
             GaussianBlur(*magnitude[i][j], imgWeight, Size(sizeK,sizeK), 1.5*abs_sigma, 1.5*abs_sigma);
-            saveKeyP(imgWeight, width, height, magnitude[i][j],orientation[i][j],i,j,scale,sizeK);
+            saveKeyP(imgWeight, magnitude[i][j],orientation[i][j],i,j,scale,sizeK);
 
             cout << "Method : SaveKeyP completed" << i << j <<  endl;        
         }
@@ -324,14 +325,24 @@ int GetKernelSize(double sigma){
     return size;
     }
 
-void saveKeyP(Mat& imgWeight, int width, int height,
- Mat* magnitude, Mat* orientation, int i, int j, int scale, int sizeK){
+int chkKeyPoint(int i, int xi, int yi){
+    for(int j = 0; j < BLUR_NUM-3; j++)
+        if (extImg[i][j].at<uchar>(yi, xi)==0)
+            return 1;
+    return 0;
+}
+
+void saveKeyP(Mat& imgWeight, Mat* magnitude, Mat* orientation, 
+                                int i, int j, int scale, int sizeK){
     double hist_orient[NUM_BINS];
     int xi, yi, xk, yk, k;
-    for(xi=0;xi<width; xi++){
+    printf("Save Keypoints : current picture is, oct : %d, blur : %d.\n",i,j);
+    int width  = magnitude->size().width;
+    int height = magnitude->size().height;
+    for(xi=0;xi<width ;xi++){
     for(yi=0;yi<height;yi++){
         // At the keypoint
-    if(extImg[i][j].at<uchar>(yi, xi)!=0){
+    if(chkKeyPoint(i, xi, yi==0)){
         // Reset the histogram
         // xk and tk : kernel x, y position, center is (0,0)
         for(xk = -sizeK; xk <= sizeK; xk++){
@@ -405,10 +416,11 @@ void saveKeyP(Mat& imgWeight, int width, int height,
                 int ori255 = (int)( x0 * (256/NUM_BINS) );
                 if (ori255 >= 256) ori255-=256; 
                 if (ori255 < 0)    ori255+=256;
-                cout << "Calc ori255" << i <<"  "<< j <<"  "<< k <<"  " << endl;
+                //cout << "Calc ori255" << "   " << i << "  " << j << "  " << k << "  " << endl;
                 orien.push_back(ori255);
                   mag.push_back(hist_orient[k]);
             }
+            //cout << k << endl;
         }
 
             // Save this keypoint into the keyPoints vector
@@ -421,7 +433,6 @@ void saveKeyP(Mat& imgWeight, int width, int height,
 
 void ExtractKeypointDescriptors(){
     printf("Extract keypoint descriptors...\n");
-
     vector<double> orien, mag;
     int width, height, scale, octInd, blurInd, targetX, targetY, curX, curY;
     int i, j, ii, jj, starti, startj, limiti, limitj, t;
@@ -442,14 +453,19 @@ void ExtractKeypointDescriptors(){
     // These two loops calculate the interpolated thingy for all octaves and subimages
     for(i=0;i<OCT_NUM; i++){
     for(j=0;j<BLUR_NUM;j++){
+        cout << i << "  " << j << endl;
 
         // Scale up. This will give us access to in betweens        
         width  = octave[i][j].size().width;
         height = octave[i][j].size().height;
 
+        cout << "11" << endl;
+
         // Allocate memory
         imgInterpolMag[i][j] = new Mat(width, height, CV_32FC1);
         imgInterpolOri[i][j] = new Mat(width, height, CV_32FC1);
+
+        cout << "22" << endl;
 
         // Do the calculations
         for(ii=0; ii<width -1; ii++){
@@ -481,11 +497,18 @@ void ExtractKeypointDescriptors(){
         }
         }
 
+    cout << "asdasd" << endl;
+
     cv::Mat *G = BuildInterpolatedGaussianTable(FEATURE_WINDOW_SIZE, 0.5*FEATURE_WINDOW_SIZE);
     vector<double> hist(DESC_NUM_BINS);
 
+    cout << "asdasd" << endl;
+
+
     // Loop over all keypoints
     for(int ikp = 0;ikp < keyPoints.size();ikp++){
+        cout << ikp << endl;
+
         scale   = keyPoints[ikp].scale;
         keyPx   = keyPoints[ikp].xi; descxi  = keyPx;
         keyPy   = keyPoints[ikp].yi; descyi  = keyPy;
