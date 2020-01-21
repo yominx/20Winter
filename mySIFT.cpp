@@ -29,7 +29,7 @@ using namespace std;
 void makeOctave(Mat& mat, Size size);
 
 void DetectExtrema();
-    void isExtrema(Mat& up, Mat& target, Mat& down, Size size, int x, int y);
+    void isExtrema(Mat* up, Mat* target, Mat* down, int x, int y);
 
 void AssignOrientations();
     void makeMagAndOri(Mat& mag, Mat& ori, int i, int j);
@@ -78,10 +78,26 @@ class Keypoint{
     };
 
 char window_name[] = "SIFT test";
-cv::Mat octave[OCT_NUM][BLUR_NUM], dogList[OCT_NUM][BLUR_NUM-1], extImg[OCT_NUM][BLUR_NUM-3];
 vector<Keypoint*> keyPoints;
 vector<Descriptor*> keyDescs;
 double absSigma[OCT_NUM];
+
+////////////////////// Allocate Octave, DoG, ExtImg  //////////
+
+int temp = 0;
+cv::Mat*** octave, dogList, extImg;
+
+void alloc(){
+    octave  = new cv::Mat** [OCT_NUM];
+    dogList = new cv::Mat** [OCT_NUM];
+    extImg  = new cv::Mat** [OCT_NUM];
+    for(temp = 0; temp < OCT_NUM; temp++)
+        octave[temp]  = new Mat*[BLUR_NUM];
+    for(temp = 0; temp<OCT_NUM; temp++)
+        dogList[temp] = new Mat*[BLUR_NUM-1];
+    for(temp = 0; temp<OCT_NUM; temp++)
+        extImg[temp]  = new Mat*[BLUR_NUM-3];
+}
 
 int main(int argc, char * argv[]) {
 
@@ -95,6 +111,7 @@ int main(int argc, char * argv[]) {
 
     cout << "Size of the picture is" << image.size() << endl;
     keyPoints.clear();
+    alloc();
     makeOctave(image, image.size());
     DetectExtrema();
     AssignOrientations();
@@ -124,7 +141,7 @@ void makeOctave(Mat& mat, Size size){
     std::cout << "Making img pyramid" << endl;
 
     for(int i = 0; i < OCT_NUM-1; i++)
-        cv::pyrDown(octave[i][0], octave[i+1][0]);
+        cv::pyrDown(*octave[i][0], *octave[i+1][0]);
 
     std::cout << "Gaussian blurring! Make all octave member." << endl;
     for(int i = 0; i < OCT_NUM; i++){
@@ -139,8 +156,8 @@ void makeOctave(Mat& mat, Size size){
         for(int j = 1; j < BLUR_NUM; j++){
             //Mat sizeMat(newH, newW, CV_32FC1, Scalar(0));
           //  cout << i << "     " << j << endl;
-            octave[i][j] = octave[i][0].clone();
-            GaussianBlur(octave[i][j], octave[i][j],Size(0,0),curSigma,curSigma);
+            *octave[i][j] = octave[i][0]->clone();
+            GaussianBlur(*octave[i][j], *octave[i][j],Size(0,0),curSigma,curSigma);
             absSigma[j] = curSigma; 
 
             curSigma *=sigmaF;
@@ -166,51 +183,52 @@ void makeOctave(Mat& mat, Size size){
 void DetectExtrema(){
     cout << endl << "!! Detecting Extrema !!" << endl;
     int i, j;
-    cv::Mat up, target, down;
+    cv::Mat* up, target, down;
     for (i=0;i<OCT_NUM;i++){
         for (j=0;j<BLUR_NUM-3;j++){
             up = dogList[i][j]; target = dogList[i][j+1]; down = dogList[i][j+2];
             cout << i << "        " << j<< endl;
-            isExtrema(up,target,down,target.size(),i,j);
+            isExtrema(up,target,down,i,j);
         }
     }
     }
 
-void isExtrema(Mat& up, Mat& target, Mat& down, Size size, int x, int y){
-    extImg[x][y] = Mat(size,CV_32FC1);
+void isExtrema(Mat* up, Mat* target, Mat* down, int x, int y){
+    Size size = target->size();
+    extImg[x][y] = new Mat(size,CV_32FC1);
     uchar curPix;
     double dxx, dyy, dxy, trH, detH, curvature_ratio;
     cout << size ;
     int number = 0,dark = 0, edge = 0;
     for(int i = 1; i < size.width-1 ;i++){
         for(int j = 1; j < size.height-1 ; j++){
-            curPix = target.at<uchar>(j,i);
-            if ((up.at<uchar>(j-1,i-1)    > curPix && up.at<uchar>(j,i-1)    > curPix && up.at<uchar>(j+1,i-1)     > curPix &&
-                up.at<uchar>(j-1,i  )     > curPix && up.at<uchar>(j,i)      > curPix && up.at<uchar>(j+1,i  )     > curPix &&
-                up.at<uchar>(j-1,i+1)     > curPix && up.at<uchar>(j,i+1)    > curPix && up.at<uchar>(j+1,i+1)     > curPix &&
-                target.at<uchar>(j-1,i-1) > curPix && target.at<uchar>(j,i-1)> curPix && target.at<uchar>(j+1,i-1) > curPix &&
-                target.at<uchar>(j-1,i  ) > curPix &&                                    target.at<uchar>(j+1,i  ) > curPix &&
-                target.at<uchar>(j-1,i+1) > curPix && target.at<uchar>(j,i+1)> curPix && target.at<uchar>(j+1,i+1) > curPix &&
-                down.at<uchar>(j-1,i-1)   > curPix && down.at<uchar>(j,i-1)  > curPix && down.at<uchar>(j+1,i-1)   > curPix &&
-                down.at<uchar>(j-1,i  )   > curPix && down.at<uchar>(j,i)    > curPix && down.at<uchar>(j+1,i  )   > curPix &&
-                down.at<uchar>(j-1,i+1)   > curPix && down.at<uchar>(j,i+1)  > curPix && down.at<uchar>(j+1,i+1)   > curPix 
+            curPix = target->at<uchar>(j,i);
+            if ((up->at<uchar>(j-1,i-1)    > curPix && up->at<uchar>(j,i-1)    > curPix && up->at<uchar>(j+1,i-1)     > curPix &&
+                up->at<uchar>(j-1,i  )     > curPix && up->at<uchar>(j,i)      > curPix && up->at<uchar>(j+1,i  )     > curPix &&
+                up->at<uchar>(j-1,i+1)     > curPix && up->at<uchar>(j,i+1)    > curPix && up->at<uchar>(j+1,i+1)     > curPix &&
+                target->at<uchar>(j-1,i-1) > curPix && target->at<uchar>(j,i-1)> curPix && target->at<uchar>(j+1,i-1) > curPix &&
+                target->at<uchar>(j-1,i  ) > curPix &&                                    target->at<uchar>(j+1,i  ) > curPix &&
+                target->at<uchar>(j-1,i+1) > curPix && target->at<uchar>(j,i+1)> curPix && target->at<uchar>(j+1,i+1) > curPix &&
+                down->at<uchar>(j-1,i-1)   > curPix && down->at<uchar>(j,i-1)  > curPix && down->at<uchar>(j+1,i-1)   > curPix &&
+                down->at<uchar>(j-1,i  )   > curPix && down->at<uchar>(j,i)    > curPix && down->at<uchar>(j+1,i  )   > curPix &&
+                down->at<uchar>(j-1,i+1)   > curPix && down->at<uchar>(j,i+1)  > curPix && down->at<uchar>(j+1,i+1)   > curPix 
                 )||(
-                up.at<uchar>(j-1,i-1)     < curPix && up.at<uchar>(j,i-1)    < curPix && up.at<uchar>(j+1,i-1)     < curPix &&
-                up.at<uchar>(j-1,i  )     < curPix && up.at<uchar>(j,i)      < curPix && up.at<uchar>(j+1,i  )     < curPix &&
-                up.at<uchar>(j-1,i+1)     < curPix && up.at<uchar>(j,i+1)    < curPix && up.at<uchar>(j+1,i+1)     < curPix &&
-                target.at<uchar>(j-1,i-1) < curPix && target.at<uchar>(j,i-1)< curPix && target.at<uchar>(j+1,i-1) < curPix &&
-                target.at<uchar>(j-1,i  ) < curPix &&                                    target.at<uchar>(j+1,i  ) < curPix &&
-                target.at<uchar>(j-1,i+1) < curPix && target.at<uchar>(j,i+1)< curPix && target.at<uchar>(j+1,i+1) < curPix &&
-                down.at<uchar>(j-1,i-1)   < curPix && down.at<uchar>(j,i-1)  < curPix && down.at<uchar>(j+1,i-1)   < curPix &&
-                down.at<uchar>(j-1,i  )   < curPix && down.at<uchar>(j,i)    < curPix && down.at<uchar>(j+1,i  )   < curPix &&
-                down.at<uchar>(j-1,i+1)   < curPix && down.at<uchar>(j,i+1)  < curPix && down.at<uchar>(j+1,i+1)   < curPix 
+                up->at<uchar>(j-1,i-1)     < curPix && up->at<uchar>(j,i-1)    < curPix && up->at<uchar>(j+1,i-1)     < curPix &&
+                up->at<uchar>(j-1,i  )     < curPix && up->at<uchar>(j,i)      < curPix && up->at<uchar>(j+1,i  )     < curPix &&
+                up->at<uchar>(j-1,i+1)     < curPix && up->at<uchar>(j,i+1)    < curPix && up->at<uchar>(j+1,i+1)     < curPix &&
+                target->at<uchar>(j-1,i-1) < curPix && target->at<uchar>(j,i-1)< curPix && target->at<uchar>(j+1,i-1) < curPix &&
+                target->at<uchar>(j-1,i  ) < curPix &&                                    target->at<uchar>(j+1,i  ) < curPix &&
+                target->at<uchar>(j-1,i+1) < curPix && target->at<uchar>(j,i+1)< curPix && target->at<uchar>(j+1,i+1) < curPix &&
+                down->at<uchar>(j-1,i-1)   < curPix && down->at<uchar>(j,i-1)  < curPix && down->at<uchar>(j+1,i-1)   < curPix &&
+                down->at<uchar>(j-1,i  )   < curPix && down->at<uchar>(j,i)    < curPix && down->at<uchar>(j+1,i  )   < curPix &&
+                down->at<uchar>(j-1,i+1)   < curPix && down->at<uchar>(j,i+1)  < curPix && down->at<uchar>(j+1,i+1)   < curPix 
                 )){
-                    dxx = (target.at<uchar>(j-1, i) + target.at<uchar>(j+1, i) -
-                        2.0*target.at<uchar>(j, i));
-                    dyy = (target.at<uchar>(j, i-1) + target.at<uchar>(j, i+1) -
-                        2.0*target.at<uchar>(j, i));
-                    dxy = (target.at<uchar>(j-1, i-1) + target.at<uchar>(j+1, i+1) -
-                        target.at<uchar>(j+1, i-1) - target.at<uchar>(j-1, i+1)) / 4.0;
+                    dxx = (target->at<uchar>(j-1, i) + target->at<uchar>(j+1, i) -
+                        2.0*target->at<uchar>(j, i));
+                    dyy = (target->at<uchar>(j, i-1) + target->at<uchar>(j, i+1) -
+                        2.0*target->at<uchar>(j, i));
+                    dxy = (target->at<uchar>(j-1, i-1) + target->at<uchar>(j+1, i+1) -
+                        target->at<uchar>(j+1, i-1) - target->at<uchar>(j-1, i+1)) / 4.0;
                     trH = dxx + dyy;
                     detH = dxx*dyy - dxy*dxy;
                     curvature_ratio = trH*trH/detH;
@@ -225,7 +243,7 @@ void isExtrema(Mat& up, Mat& target, Mat& down, Size size, int x, int y){
                     edge++;
                 }
                 else{
-                    extImg[x][y].at<uchar>(j,i) = 255;
+                    extImg[x][y]->at<uchar>(j,i) = 255;
                     number++;
                     }
                 }
@@ -240,14 +258,14 @@ void isExtrema(Mat& up, Mat& target, Mat& down, Size size, int x, int y){
 
 void AssignOrientations(){
     cout << endl << "!! Assigning Orientations !!" << endl;
-    cv::Mat magnitude[OCT_NUM][BLUR_NUM-3],orientation[OCT_NUM][BLUR_NUM-3];
     int i,j;
+    cv::Mat magnitude[OCT_NUM][BLUR_NUM-3],orientation[OCT_NUM][BLUR_NUM-3];
 
 
     for (int i=0;i<OCT_NUM;i++){
         for (int j=0;j<BLUR_NUM-3;j++){
-            magnitude[i][j]   = Mat(octave[i][0].size(),CV_32FC1);
-            orientation[i][j] = Mat(octave[i][0].size(),CV_32FC1);
+            magnitude[i][j]   = Mat(octave[i][0]->size(),CV_32FC1);
+            orientation[i][j] = Mat(octave[i][0]->size(),CV_32FC1);
             makeMagAndOri(magnitude[i][j], orientation[i][j], i, j+1);
             
             //cout << i << j << endl;
@@ -260,8 +278,8 @@ void AssignOrientations(){
     for(int i=0;i<OCT_NUM;i++){
         // Store current scale, width and height
         int scale = (int)pow(2.0, (double)i);
-        int width = octave[i][0].size().width;
-        int height= octave[i][0].size().height;
+        int width = octave[i][0]->size().width;
+        int height= octave[i][0]->size().height;
 
         // Go through all intervals in the current scale
         for(int j=0;j<BLUR_NUM-3;j++){
@@ -290,11 +308,11 @@ void AssignOrientations(){
     }
 void makeMagAndOri(Mat& mag, Mat& ori, int i, int j){
     int norm255,xi,yi;
-    for(xi=1;xi < octave[i][j].size().width-1;xi++){
-        for(yi=1;yi < octave[i][j].size().height-1;yi++){
+    for(xi=1;xi < octave[i][j]->size().width-1;xi++){
+        for(yi=1;yi < octave[i][j]->size().height-1;yi++){
             // Calculate gradient
-            double dx = octave[i][j].at<uchar>(yi, xi+1)-octave[i][j].at<uchar>(yi, xi-1);
-            double dy = octave[i][j].at<uchar>(yi+1, xi)-octave[i][j].at<uchar>(yi-1, xi);
+            double dx = octave[i][j]->at<uchar>(yi, xi+1)-octave[i][j]->at<uchar>(yi, xi-1);
+            double dy = octave[i][j]->at<uchar>(yi+1, xi)-octave[i][j]->at<uchar>(yi-1, xi);
             // Store magnitude
             mag.at<uchar>(yi, xi) = sqrt(dx*dx + dy*dy);
 
@@ -324,7 +342,7 @@ int GetKernelSize(double sigma){
 
 int chkKeyPoint(int i, int xi, int yi){
     for(int j = 0; j < BLUR_NUM-3; j++)
-        if (extImg[i][j].at<uchar>(yi, xi)!=0)
+        if (extImg[i][j]->at<uchar>(yi, xi)!=0)
             return 1;
     return 0;
 }
@@ -474,7 +492,6 @@ void saveKeyP(Mat& imgWeight, Mat& magnitude, Mat& orientation,
 void ExtractKeypointDescriptors(){
 
     printf("\n\nExtract keypoint descriptors...\n");
-    vector<int> orien, mag;
     int width, height, scale, octInd, blurInd, targetX, targetY, curX, curY;
     int main_mag, main_orien;
     int i, j, ii, jj, starti, startj, limiti, limitj, t;
@@ -485,14 +502,15 @@ void ExtractKeypointDescriptors(){
     int bin, norm255;
 
     // Allocate magnitudes and orientations
+    vector<int> orien, mag;
     cv::Mat imgInterpolMag[OCT_NUM][BLUR_NUM], imgInterpolOri[OCT_NUM][BLUR_NUM];
     cv::Mat weight(FEATURE_WINDOW_SIZE, FEATURE_WINDOW_SIZE, CV_32FC1);
 
     // These two loops calculate the interpolated thingy for all octaves and subimages
     // These two loops calculate the interpolated thingy for all octaves and subimages
     for(i=0;i<OCT_NUM; i++){
-    width  = octave[i][0].size().width;
-    height = octave[i][0].size().height;
+    width  = octave[i][0]->size().width;
+    height = octave[i][0]->size().height;
         for(j=0;j<BLUR_NUM-3;j++){
         // Allocate memory
         imgInterpolMag[i][j] = Mat(width,height,CV_32FC1);
@@ -503,8 +521,8 @@ void ExtractKeypointDescriptors(){
     BuildInterpolatedGaussianTable(G, FEATURE_WINDOW_SIZE, 0.5*FEATURE_WINDOW_SIZE);
 
     for(i=0;i<OCT_NUM; i++){
-    width  = octave[i][0].size().width;
-    height = octave[i][0].size().height;
+    width  = octave[i][0]->size().width;
+    height = octave[i][0]->size().height;
     for(j=0;j<BLUR_NUM-3;j++){
 
         // Do the calculations
@@ -513,8 +531,8 @@ void ExtractKeypointDescriptors(){
             // "inbetween" change
             // 01 11  ---\
             // 00 10  ---/ 0,0
-            dx = (octave[i][j].at<uchar>(jj+1, ii+1) + octave[i][j].at<uchar>(jj, ii+1) - octave[i][j].at<uchar>(jj+1, ii) - octave[i][j].at<uchar>(jj, ii))/2;
-            dy = (octave[i][j].at<uchar>(jj+1, ii+1) + octave[i][j].at<uchar>(jj+1, ii) - octave[i][j].at<uchar>(jj, ii+1) - octave[i][j].at<uchar>(jj, ii))/2;
+            dx = (octave[i][j]->at<uchar>(jj+1, ii+1) + octave[i][j]->at<uchar>(jj, ii+1) - octave[i][j]->at<uchar>(jj+1, ii) - octave[i][j]->at<uchar>(jj, ii))/2;
+            dy = (octave[i][j]->at<uchar>(jj+1, ii+1) + octave[i][j]->at<uchar>(jj+1, ii) - octave[i][j]->at<uchar>(jj, ii+1) - octave[i][j]->at<uchar>(jj, ii))/2;
             imgInterpolMag[i][j].at<uchar>(jj, ii) = sqrt(dx*dx + dy*dy);
             if (atan2(dy,dx) == M_PI)
                 norm255 = 0;
@@ -545,6 +563,7 @@ void ExtractKeypointDescriptors(){
 
 
     for(int ikp = 0;ikp < keyPoints.size();ikp++){
+        Descriptor* D;
         cout << "keypoint index is : " <<ikp << endl;
 
         scale   = keyPoints[ikp]->scale;
@@ -558,8 +577,8 @@ void ExtractKeypointDescriptors(){
         targetX = (int)(keyPx*2) / (int)(pow(2.0, (double)octInd));
         targetY = (int)(keyPy*2) / (int)(pow(2.0, (double)octInd));
 
-        width  = octave[octInd][0].size().width;
-        height = octave[octInd][0].size().height;
+        width  = octave[octInd][0]->size().width;
+        height = octave[octInd][0]->size().height;
 
         orien = keyPoints[ikp]->orien;
         mag   = keyPoints[ikp]->mag;
@@ -694,7 +713,9 @@ cout << mag.size() <<endl;
 
         // We're done with this descriptor. Store it into a list
         cout << "PUSH" << endl;
-        keyDescs.push_back(new Descriptor(keyPx, keyPy, fv));
+        D = new Descriptor(keyPx, keyPy, fv);
+        cout << "asdadsasdasdfdfassgae" << endl;
+        keyDescs.push_back(D);
         cout << "PULL" << endl;
 
         }
