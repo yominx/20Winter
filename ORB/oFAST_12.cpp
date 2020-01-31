@@ -63,14 +63,16 @@ bool oFAST::isFeature(int curpix, int* pixlist, int brightP, int thres){
     for(int i=0;i<16;i++)
         comparelist[i] = (curpix - pixlist[i]);
 
+    /*
+    cout << curpix << endl;
+    for(int i=0;i<16;i++)
+        cout << pixlist[i] << " " << comparelist[i] << endl;
+    */
     
     for(int i=0;i<16;i++){
-        if(comparelist[i]>0) brightP = 1;
-        else                 brightP = 0;
         for(int k=0;;k++){
             index = (i+k)%16;
-            if(k==9) {//cout << "this is feature";
-                     return true;} //n=12 -> true
+            if(k==12) {cout << "this is feature"; return true;} //n=12 -> true
             if((brightP && comparelist[index]<thres) || (!brightP && comparelist[index]>-thres)) break;
         }
     }
@@ -97,19 +99,19 @@ void oFAST::findFeature(cv::Mat* image,int thres){
 
     int pix4list[4], pix16list[16], curpix, brightP;
 
-    //imshow("test",temp);
-    //waitKey(0);
+    imshow("test",temp);
+    waitKey(0);
 
     int num = 0;
     for(int x=3; x<imgGray->size().width-3; x++){
         for(int y=3; y<imgGray->size().height-3; y++){
             curpix     = imgGray->at<uchar>(y,x);
             get4Pix(imgGray,x,y,pix4list);
-            //brightP = available(curpix,pix4list,thres);
-            //if(!brightP) continue;
+            brightP = available(curpix,pix4list,thres);
+            if(!brightP) continue;
 
-            brightP = 1;
-            //cout << endl << "current pixel : " << x<< " " << y<< endl ;
+            brightP -= 1;
+            cout << endl << "current pixel : " << x<< " " << y<< endl ;
             get16Pix(imgGray,x,y,pix16list);
             if(isFeature(curpix, pix16list, brightP, thres))
                 {num++;this->Featurelist.push_back(Feature(x,y,getFeatureAngle(pix16list)));}
