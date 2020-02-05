@@ -1,8 +1,21 @@
-cmake_minimum_required(VERSION 2.8)
-project( mySIFT )
-find_package( OpenCV REQUIRED )
-include_directories( ${OpenCV_INCLUDE_DIRS} )
-ADD_COMPILE_OPTIONS(-g)
-add_executable(ORB_TEST oFAST.cpp rBRIEF.cpp ORBclass.cpp ORB.cpp)
-target_link_libraries(ORB_TEST ${OpenCV_LIBS} )
 
+
+#  minimum required cmake version: 3.1.0
+cmake_minimum_required(VERSION 3.1.0)
+
+project(ORB_TEST)
+
+add_executable(ORB_TEST oFAST.cpp rBRIEF.cpp ORBclass.cpp ORB.cpp)
+ADD_COMPILE_OPTIONS(-g)
+set_property(TARGET ORB_TEST PROPERTY CXX_STANDARD 11)
+target_link_libraries(ORB_TEST ${DEPENDENCIES})
+set_target_properties (ORB_TEST PROPERTIES
+	FOLDER "Examples/OpenCV"
+)
+
+install(
+	TARGETS
+	ORB_TEST
+	RUNTIME DESTINATION
+	${CMAKE_INSTALL_PREFIX}/bin
+)

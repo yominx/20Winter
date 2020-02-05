@@ -78,18 +78,7 @@ bool oFAST::isFeature(int curpix, int* pixlist, int brightP, int thres){
 }
 
 
-double oFAST::getFeatureAngle(int* pixlist){
-    cv::Mat* image = this->image;
-    int weightX = pixlist[1] + 2*pixlist[2]  + 3*pixlist[3]  + 3*pixlist[4]  + 3*pixlist[5]  + 2*pixlist[6]  + pixlist[7]
-                -(pixlist[9] + 2*pixlist[10] + 3*pixlist[11] + 3*pixlist[12] + 3*pixlist[13] + 2*pixlist[14] + pixlist[15]);
-    int weightY = pixlist[5] + 2*pixlist[6]  + 3*pixlist[7]  + 3*pixlist[8]  + 3*pixlist[9]  + 2*pixlist[10] + pixlist[11]
-                -(pixlist[13]+ 2*pixlist[14] + 3*pixlist[15] + 3*pixlist[0]  + 3*pixlist[1]  + 2*pixlist[2]  + pixlist[3]);
-    double ans = atan2((float)weightY,(float)weightX);
-    return ans;
-}
-
-
-void oFAST::findFeature(cv::Mat* image,int thres){
+void oFAST::findFeature(cv::Mat* image,float factorScale, int level, int border, int thres){
     this->image = image;
     cv::Mat temp;
     cv::cvtColor(*(this->image), temp, CV_BGR2GRAY);
@@ -111,8 +100,16 @@ void oFAST::findFeature(cv::Mat* image,int thres){
             brightP = 1;
             //cout << endl << "current pixel : " << x<< " " << y<< endl ;
             get16Pix(imgGray,x,y,pix16list);
-            if(isFeature(curpix, pix16list, brightP, thres))
-                {num++;this->Featurelist.push_back(Feature(x,y,getFeatureAngle(pix16list)));}
+            if(isFeature(curpix, pix16list, brightP, thres)){
+                num++;
+                int weightX = pix16list[1] + 2*pix16list[2]  + 3*pix16list[3]  + 3*pix16list[4]  + 3*pix16list[5]  + 2*pix16list[6]  + pix16list[7]
+                            -(pix16list[9] + 2*pix16list[10] + 3*pix16list[11] + 3*pix16list[12] + 3*pix16list[13] + 2*pix16list[14] + pix16list[15]);
+                int weightY = pix16list[5] + 2*pix16list[6]  + 3*pix16list[7]  + 3*pix16list[8]  + 3*pix16list[9]  + 2*pix16list[10] + pix16list[11]
+                            -(pix16list[13]+ 2*pix16list[14] + 3*pix16list[15] + 3*pix16list[0]  + 3*pix16list[1]  + 2*pix16list[2]  + pix16list[3]);
+                this->Featurelist.push_back(Feature(level, x*factorScale+border, y*factorScale+border,
+                                                    sqrt(weightX*weightX+weightY*weightY),
+                                                        atan2((float)weightY,(float)weightX)));
+            }
         }
     }
     cout << "# of feature is " << num << endl;
@@ -120,7 +117,7 @@ void oFAST::findFeature(cv::Mat* image,int thres){
 
 cv::Mat oFAST::featureImg(){
     cv::Mat showImg = this->image->clone();
-    Feature key(0,0,0.0);
+    Feature key(0,0,0,0.0,0.0);
     cv::cvtColor(showImg,showImg,CV_BGR2GRAY);
 
     for(int i=0; i<this->Featurelist.size(); i++){
@@ -129,4 +126,8 @@ cv::Mat oFAST::featureImg(){
         //showImg.at<uchar>(key.y,key.x) = 255;
     }
     return showImg;
+}
+
+vector<Feature> oFAST::featureList(){
+    return this->Featurelist;
 }

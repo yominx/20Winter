@@ -4,32 +4,28 @@
 
 #define FP_LEN 256
 
-Feature::Feature(int Px, int Py, int degree){
+Feature::Feature(int _level, int Px, int Py,double _mag, double degree){
+    level=_level;
     x = Px;
     y = Py;
+    mag = _mag;
     orien = degree;
     }
 
 FingerPrint::FingerPrint(){
+	list.clear();
     length = 0;
     }
 
 void FingerPrint::pushKey(int key){
-	assert(length<FP_LEN);
-	assert(key==0 || key==1);
-	if(length%8==0) list.push_back(key);
-	else            list[length/8] = list[length/8]<<1 + key;
-	   
+	list.push_back(key);
 	length++;
     }
 
 int FingerPrint::getKey(int index){
+	assert(length==256);
 	assert(index<FP_LEN);
-	int listInd = index/32;
-	int bitInd 	= 31-index%32;
-	assert(bitInd > 0);
-	int ans = (list[listInd]>>bitInd) & 1;
-	assert(ans==0 || ans ==1);
+	int ans = list[index];
 	return ans;
     }
 

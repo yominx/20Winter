@@ -5,17 +5,19 @@
 
 class Feature{
 public:
+	int level;
     int   x;
     int   y;     // Location
+    double mag;
     double orien;  // calculated by atan2
 
-    Feature(int Px, int Py, int degree);
+    Feature(int level, int Px, int Py,double _mag,double degree);
 };
 
 class FingerPrint{
 public:
-    std::vector<int>   	list;
-    int 			length;
+    std::vector<int>    list;
+    int 				length;
 
     FingerPrint();
     void pushKey(int key);

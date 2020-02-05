@@ -1,0 +1,12 @@
+[
+{
+  "directory": "/home/junny/individual/librealsense/wrappers/opencv/ORB/depth-filter",
+  "command": "/usr/bin/c++    -I/home/junny/individual/librealsense/wrappers/opencv/depth-filter/rs-depth-filter -I/home/junny/individual/librealsense/wrappers/opencv/depth-filter/../../../common -isystem /opt/ros/kinetic/include/opencv-3.3.1-dev -isystem /opt/ros/kinetic/include/opencv-3.3.1-dev/opencv   -std=c++11 -msse4.1   -o CMakeFiles/rs-depth-filter.dir/rs-depth-filter.cpp.o -c /home/junny/individual/librealsense/wrappers/opencv/depth-filter/rs-depth-filter.cpp",
+  "file": "/home/junny/individual/librealsense/wrappers/opencv/depth-filter/rs-depth-filter.cpp"
+},
+{
+  "directory": "/home/junny/individual/librealsense/wrappers/opencv/ORB/depth-filter",
+  "command": "/usr/bin/c++    -I/home/junny/individual/librealsense/wrappers/opencv/depth-filter/rs-depth-filter -I/home/junny/individual/librealsense/wrappers/opencv/depth-filter/../../../common -isystem /opt/ros/kinetic/include/opencv-3.3.1-dev -isystem /opt/ros/kinetic/include/opencv-3.3.1-dev/opencv   -std=c++11 -msse4.1   -o CMakeFiles/rs-depth-filter.dir/downsample.cpp.o -c /home/junny/individual/librealsense/wrappers/opencv/depth-filter/downsample.cpp",
+  "file": "/home/junny/individual/librealsense/wrappers/opencv/depth-filter/downsample.cpp"
+}
+]

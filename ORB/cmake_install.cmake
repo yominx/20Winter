@@ -1,4 +1,4 @@
-# Install script for directory: /home/junny/individual/WorkSpace/ORB
+# Install script for directory: /home/junny/individual/librealsense/wrappers/opencv
 
 # Set the install prefix
 if(NOT DEFINED CMAKE_INSTALL_PREFIX)
@@ -32,6 +32,17 @@ if(NOT DEFINED CMAKE_INSTALL_SO_NO_EXE)
   set(CMAKE_INSTALL_SO_NO_EXE "1")
 endif()
 
+if(NOT CMAKE_INSTALL_LOCAL_ONLY)
+  # Include the install script for each subdirectory.
+  include("/home/junny/individual/librealsense/wrappers/opencv/ORB/ORB/cmake_install.cmake")
+  include("/home/junny/individual/librealsense/wrappers/opencv/ORB/imshow/cmake_install.cmake")
+  include("/home/junny/individual/librealsense/wrappers/opencv/ORB/grabcuts/cmake_install.cmake")
+  include("/home/junny/individual/librealsense/wrappers/opencv/ORB/latency-tool/cmake_install.cmake")
+  include("/home/junny/individual/librealsense/wrappers/opencv/ORB/dnn/cmake_install.cmake")
+  include("/home/junny/individual/librealsense/wrappers/opencv/ORB/depth-filter/cmake_install.cmake")
+
+endif()
+
 if(CMAKE_INSTALL_COMPONENT)
   set(CMAKE_INSTALL_MANIFEST "install_manifest_${CMAKE_INSTALL_COMPONENT}.txt")
 else()
@@ -40,5 +51,5 @@ endif()
 
 string(REPLACE ";" "\n" CMAKE_INSTALL_MANIFEST_CONTENT
        "${CMAKE_INSTALL_MANIFEST_FILES}")
-file(WRITE "/home/junny/individual/WorkSpace/ORB/${CMAKE_INSTALL_MANIFEST}"
+file(WRITE "/home/junny/individual/librealsense/wrappers/opencv/ORB/${CMAKE_INSTALL_MANIFEST}"
      "${CMAKE_INSTALL_MANIFEST_CONTENT}")

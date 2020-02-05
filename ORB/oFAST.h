@@ -14,9 +14,9 @@ public:
 	int 	 available(int curpix, int* pix4,int thres);
 	void	 get16Pix(cv::Mat* image, int x, int y,int* ret);
 	bool 	 isFeature(int curpix, int* pixlist, int bright, int thres);
-	double 	 getFeatureAngle(int* pixlist);
-	void	 findFeature(cv::Mat* image,int thres=20);
+	void	 findFeature(cv::Mat* image,float factorScale,int level,int border,int thres=20);
 	cv::Mat  featureImg();
+	std::vector<Feature> featureList();
 
 };
 #endif
