@@ -19,13 +19,15 @@ using namespace std;
 
 int main(int argc, char * argv[]) try
 {
-    cv::Mat *imgPyr[N_LEVELS], temp;
+    cv::Mat *imgPyr[N_LEVELS];
     for(int i=0;i<N_LEVELS;i++)
         imgPyr[i] = new Mat(Size(2000,1080),CV_32FC1); 
 
     std::vector<Feature> allFeatureList;
     std::vector<FingerPrint> FPlist;
-    int fastThres = atoi(argv[0]);
+    int fastThres = 20; //Default threshold for FAST
+    if(argv[1]!=NULL)
+        fastThres = atoi(argv[1]);
     float factorList[N_LEVELS];
     factorList[0] = 1;
     for(int i=1; i<N_LEVELS;i++)
@@ -44,37 +46,25 @@ int main(int argc, char * argv[]) try
         const int w = rgbImg.as<rs2::video_frame>().get_width();
         const int h = rgbImg.as<rs2::video_frame>().get_height();
         Mat image(Size(w, h), CV_8UC3, (void*)rgbImg.get_data(), Mat::AUTO_STEP);
-    	cv::cvtColor(image, image, CV_BGR2GRAY);
+        cv::cvtColor(image, image, CV_BGR2GRAY);
 
         //Make Img Pyramid.
         for(int i=0;i<N_LEVELS;i++){
             cv::Mat outImgi;
             cv::Size newSize = cv::Size((int)((image.cols)/factorList[i]),
                                         (int)((image.rows)/factorList[i]));
-            cv::resize(image,outImgi,newSize,0,0,INTER_LINEAR_EXACT);
-            copyMakeBorder(outImgi, *(imgPyr[i]), BORDER, BORDER, BORDER, BORDER,
-                               BORDER_REFLECT_101+BORDER_ISOLATED);
-            cout << imgPyr[i]<<endl;
-            imshow(window_name,*(imgPyr[0]));
-            waitKey(0);
+            cv::resize(image,*(imgPyr[i]),newSize,0,0,INTER_LINEAR_EXACT);
+            copyMakeBorder(*(imgPyr[i]), *(imgPyr[i]), BORDER, BORDER, BORDER, BORDER, BORDER_REFLECT_101+BORDER_ISOLATED);
         }
 
         // oFAST operation.
         allFeatureList.clear();
-        for(int level=0;level<N_LEVELS;level++)
-            cout << imgPyr[level]<<endl;
         for(int level=0;level<N_LEVELS;level++){
-            imshow(window_name,*(imgPyr[level]));
-            waitKey(0);
     	    oFAST fast = oFAST();
-            imshow(window_name,*(imgPyr[level]));
-            waitKey(0);
-            int x = imgPyr[level]->rows, y=imgPyr[level]->cols;
-            cout << x << "  xy  " <<  y << endl;
-            temp = (*imgPyr[level])(Rect(BORDER, BORDER, x-BORDER, y-BORDER));
-       	 	fast.findFeature(&temp, factorList[level], level, BORDER,fastThres);
-        	imshow(window_name, fast.featureImg());
-            std::copy(fast.Featurelist.begin(), fast.Featurelist.end(), std::back_inserter(allFeatureList));
+            int x = imgPyr[level]->cols, y=imgPyr[level]->rows;
+            fast.findFeature(imgPyr[level], factorList[level], level, BORDER,fastThres);
+            if(!level) imshow(window_name,fast.featureImg());
+        	std::copy(fast.Featurelist.begin(), fast.Featurelist.end(), std::back_inserter(allFeatureList));
         }
 
         // rBRIEF operation.

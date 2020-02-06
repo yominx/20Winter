@@ -19,7 +19,8 @@ static int xy_index[512*2] =
 };//(x1,y1),(x2,y2)//(x1,y1),(x2,y2)//(x1,y1),(x2,y2)//
 
 void rBRIEF(cv::Mat **imgPyr, vector<Feature> keyPlist, vector<FingerPrint> FP){
-    int i, j, nkeyP = keyPlist.size(), intens1, intens2;
+    cout << "rBRIEF"<<endl;
+    int i, j, intense1, intense2, nkeyP = keyPlist.size();
     float a,b;
     FP.resize(nkeyP);
 
@@ -33,7 +34,6 @@ void rBRIEF(cv::Mat **imgPyr, vector<Feature> keyPlist, vector<FingerPrint> FP){
         float x1, y1, x2, y2;
         int pos_x1, pos_y1;
         int pos_x2, pos_y2;
-        int intense1, intense2;
 
         for(j=0;j<256;j++){
             _x1 = (float)xy_index[4*j]  ;   _y1 = (float)xy_index[4*j+1]  ;
@@ -41,7 +41,7 @@ void rBRIEF(cv::Mat **imgPyr, vector<Feature> keyPlist, vector<FingerPrint> FP){
              x1 = _x1*a - _y1*b;             y1 = _x1*b + _y1*a;
              x2 = _x2*a - _y2*b;             y2 = _x2*b + _y2*a;
             pos_x1 = keyP.x+x1;             pos_y1=keyP.y+y1;
-            pos_x2 = keyP.x+x2;             pos_y1=keyP.y+y2;
+            pos_x2 = keyP.x+x2;             pos_y2=keyP.y+y2;
              
             intense1 = (int)(img->at<uchar>(pos_y1,pos_x1));
             intense2 = (int)(img->at<uchar>(pos_y2,pos_x2));

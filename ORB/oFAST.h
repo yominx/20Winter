@@ -13,8 +13,8 @@ public:
 	void	 get4Pix(cv::Mat* image, int x, int y,int* ret);
 	int 	 available(int curpix, int* pix4,int thres);
 	void	 get16Pix(cv::Mat* image, int x, int y,int* ret);
-	bool 	 isFeature(int curpix, int* pixlist, int bright, int thres);
-	void	 findFeature(cv::Mat* image,float factorScale,int level,int border,int thres=20);
+	bool 	 isFeature(int curpix, int* pixlist, int thres);
+	void	 findFeature(cv::Mat* image,float factorScale,int level,int border,int thres=50);
 	cv::Mat  featureImg();
 	std::vector<Feature> featureList();
 
