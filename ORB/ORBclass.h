@@ -12,6 +12,7 @@ public:
     double orien;  // calculated by atan2
 
     Feature(int level, int Px, int Py,double _mag,double degree);
+	static bool compare(Feature a,Feature b);
 };
 
 class FingerPrint{

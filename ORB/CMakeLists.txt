@@ -12,6 +12,7 @@ target_link_libraries(ORB_TEST ${DEPENDENCIES})
 set_target_properties (ORB_TEST PROPERTIES
 	FOLDER "Examples/OpenCV"
 )
+set(CMAKE_BUILD_TYPE=Release)
 
 install(
 	TARGETS

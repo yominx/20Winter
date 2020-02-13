@@ -19,7 +19,7 @@ static int xy_index[512*2] =
 };//(x1,y1),(x2,y2)//(x1,y1),(x2,y2)//(x1,y1),(x2,y2)//
 
 void rBRIEF(cv::Mat **imgPyr, vector<Feature> keyPlist, vector<FingerPrint> FP){
-    cout << "rBRIEF"<<endl;
+    //cout << "rBRIEF"<<endl;
     int i, j, intense1, intense2, nkeyP = keyPlist.size();
     float a,b;
     FP.resize(nkeyP);

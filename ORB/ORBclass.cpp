@@ -12,6 +12,10 @@ Feature::Feature(int _level, int Px, int Py,double _mag, double degree){
     orien = degree;
     }
 
+bool Feature::compare(Feature a,Feature b){
+    return a.mag > b.mag;
+}
+
 FingerPrint::FingerPrint(){
 	list.clear();
     length = 0;
