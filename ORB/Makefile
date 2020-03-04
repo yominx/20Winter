@@ -48,68 +48,13 @@ RM = /usr/bin/cmake -E remove -f
 EQUALS = =
 
 # The top-level source directory on which CMake was run.
-CMAKE_SOURCE_DIR = /home/junny/individual/librealsense/wrappers/opencv
+CMAKE_SOURCE_DIR = /home/junny/individual/WorkSpace/ORB
 
 # The top-level build directory on which CMake was run.
-CMAKE_BINARY_DIR = /home/junny/individual/librealsense/wrappers/opencv/ORB
+CMAKE_BINARY_DIR = /home/junny/individual/WorkSpace/ORB
 
 #=============================================================================
 # Targets provided globally by CMake.
-
-# Special rule for the target install
-install: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install
-
-# Special rule for the target install
-install/fast: preinstall/fast
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Install the project..."
-	/usr/bin/cmake -P cmake_install.cmake
-.PHONY : install/fast
-
-# Special rule for the target list_install_components
-list_install_components:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Available install components are: \"Unspecified\""
-.PHONY : list_install_components
-
-# Special rule for the target list_install_components
-list_install_components/fast: list_install_components
-
-.PHONY : list_install_components/fast
-
-# Special rule for the target rebuild_cache
-rebuild_cache:
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
-	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
-.PHONY : rebuild_cache
-
-# Special rule for the target rebuild_cache
-rebuild_cache/fast: rebuild_cache
-
-.PHONY : rebuild_cache/fast
-
-# Special rule for the target install/strip
-install/strip: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing the project stripped..."
-	/usr/bin/cmake -DCMAKE_INSTALL_DO_STRIP=1 -P cmake_install.cmake
-.PHONY : install/strip
-
-# Special rule for the target install/strip
-install/strip/fast: install/strip
-
-.PHONY : install/strip/fast
-
-# Special rule for the target install/local
-install/local: preinstall
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Installing only the local directory..."
-	/usr/bin/cmake -DCMAKE_INSTALL_LOCAL_ONLY=1 -P cmake_install.cmake
-.PHONY : install/local
-
-# Special rule for the target install/local
-install/local/fast: install/local
-
-.PHONY : install/local/fast
 
 # Special rule for the target edit_cache
 edit_cache:
@@ -122,11 +67,22 @@ edit_cache/fast: edit_cache
 
 .PHONY : edit_cache/fast
 
+# Special rule for the target rebuild_cache
+rebuild_cache:
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --cyan "Running CMake to regenerate build system..."
+	/usr/bin/cmake -H$(CMAKE_SOURCE_DIR) -B$(CMAKE_BINARY_DIR)
+.PHONY : rebuild_cache
+
+# Special rule for the target rebuild_cache
+rebuild_cache/fast: rebuild_cache
+
+.PHONY : rebuild_cache/fast
+
 # The main all target
 all: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/junny/individual/librealsense/wrappers/opencv/ORB/CMakeFiles /home/junny/individual/librealsense/wrappers/opencv/ORB/CMakeFiles/progress.marks
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/junny/individual/WorkSpace/ORB/CMakeFiles /home/junny/individual/WorkSpace/ORB/CMakeFiles/progress.marks
 	$(MAKE) -f CMakeFiles/Makefile2 all
-	$(CMAKE_COMMAND) -E cmake_progress_start /home/junny/individual/librealsense/wrappers/opencv/ORB/CMakeFiles 0
+	$(CMAKE_COMMAND) -E cmake_progress_start /home/junny/individual/WorkSpace/ORB/CMakeFiles 0
 .PHONY : all
 
 # The main clean target
@@ -164,73 +120,116 @@ ORB_TEST: cmake_check_build_system
 
 # fast build rule for target.
 ORB_TEST/fast:
-	$(MAKE) -f ORB/CMakeFiles/ORB_TEST.dir/build.make ORB/CMakeFiles/ORB_TEST.dir/build
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/build
 .PHONY : ORB_TEST/fast
 
-#=============================================================================
-# Target rules for targets named SIFT
+ORB.o: ORB.cpp.o
 
-# Build rule for target.
-SIFT: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 SIFT
-.PHONY : SIFT
+.PHONY : ORB.o
 
-# fast build rule for target.
-SIFT/fast:
-	$(MAKE) -f imshow/CMakeFiles/SIFT.dir/build.make imshow/CMakeFiles/SIFT.dir/build
-.PHONY : SIFT/fast
+# target to build an object file
+ORB.cpp.o:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/ORB.cpp.o
+.PHONY : ORB.cpp.o
 
-#=============================================================================
-# Target rules for targets named rs-grabcuts
+ORB.i: ORB.cpp.i
 
-# Build rule for target.
-rs-grabcuts: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rs-grabcuts
-.PHONY : rs-grabcuts
+.PHONY : ORB.i
 
-# fast build rule for target.
-rs-grabcuts/fast:
-	$(MAKE) -f grabcuts/CMakeFiles/rs-grabcuts.dir/build.make grabcuts/CMakeFiles/rs-grabcuts.dir/build
-.PHONY : rs-grabcuts/fast
+# target to preprocess a source file
+ORB.cpp.i:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/ORB.cpp.i
+.PHONY : ORB.cpp.i
 
-#=============================================================================
-# Target rules for targets named rs-latency-tool
+ORB.s: ORB.cpp.s
 
-# Build rule for target.
-rs-latency-tool: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rs-latency-tool
-.PHONY : rs-latency-tool
+.PHONY : ORB.s
 
-# fast build rule for target.
-rs-latency-tool/fast:
-	$(MAKE) -f latency-tool/CMakeFiles/rs-latency-tool.dir/build.make latency-tool/CMakeFiles/rs-latency-tool.dir/build
-.PHONY : rs-latency-tool/fast
+# target to generate assembly for a file
+ORB.cpp.s:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/ORB.cpp.s
+.PHONY : ORB.cpp.s
 
-#=============================================================================
-# Target rules for targets named rs-dnn
+ORBclass.o: ORBclass.cpp.o
 
-# Build rule for target.
-rs-dnn: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rs-dnn
-.PHONY : rs-dnn
+.PHONY : ORBclass.o
 
-# fast build rule for target.
-rs-dnn/fast:
-	$(MAKE) -f dnn/CMakeFiles/rs-dnn.dir/build.make dnn/CMakeFiles/rs-dnn.dir/build
-.PHONY : rs-dnn/fast
+# target to build an object file
+ORBclass.cpp.o:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/ORBclass.cpp.o
+.PHONY : ORBclass.cpp.o
 
-#=============================================================================
-# Target rules for targets named rs-depth-filter
+ORBclass.i: ORBclass.cpp.i
 
-# Build rule for target.
-rs-depth-filter: cmake_check_build_system
-	$(MAKE) -f CMakeFiles/Makefile2 rs-depth-filter
-.PHONY : rs-depth-filter
+.PHONY : ORBclass.i
 
-# fast build rule for target.
-rs-depth-filter/fast:
-	$(MAKE) -f depth-filter/CMakeFiles/rs-depth-filter.dir/build.make depth-filter/CMakeFiles/rs-depth-filter.dir/build
-.PHONY : rs-depth-filter/fast
+# target to preprocess a source file
+ORBclass.cpp.i:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/ORBclass.cpp.i
+.PHONY : ORBclass.cpp.i
+
+ORBclass.s: ORBclass.cpp.s
+
+.PHONY : ORBclass.s
+
+# target to generate assembly for a file
+ORBclass.cpp.s:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/ORBclass.cpp.s
+.PHONY : ORBclass.cpp.s
+
+oFAST.o: oFAST.cpp.o
+
+.PHONY : oFAST.o
+
+# target to build an object file
+oFAST.cpp.o:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/oFAST.cpp.o
+.PHONY : oFAST.cpp.o
+
+oFAST.i: oFAST.cpp.i
+
+.PHONY : oFAST.i
+
+# target to preprocess a source file
+oFAST.cpp.i:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/oFAST.cpp.i
+.PHONY : oFAST.cpp.i
+
+oFAST.s: oFAST.cpp.s
+
+.PHONY : oFAST.s
+
+# target to generate assembly for a file
+oFAST.cpp.s:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/oFAST.cpp.s
+.PHONY : oFAST.cpp.s
+
+rBRIEF.o: rBRIEF.cpp.o
+
+.PHONY : rBRIEF.o
+
+# target to build an object file
+rBRIEF.cpp.o:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/rBRIEF.cpp.o
+.PHONY : rBRIEF.cpp.o
+
+rBRIEF.i: rBRIEF.cpp.i
+
+.PHONY : rBRIEF.i
+
+# target to preprocess a source file
+rBRIEF.cpp.i:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/rBRIEF.cpp.i
+.PHONY : rBRIEF.cpp.i
+
+rBRIEF.s: rBRIEF.cpp.s
+
+.PHONY : rBRIEF.s
+
+# target to generate assembly for a file
+rBRIEF.cpp.s:
+	$(MAKE) -f CMakeFiles/ORB_TEST.dir/build.make CMakeFiles/ORB_TEST.dir/rBRIEF.cpp.s
+.PHONY : rBRIEF.cpp.s
 
 # Help Target
 help:
@@ -238,18 +237,21 @@ help:
 	@echo "... all (the default if no target is provided)"
 	@echo "... clean"
 	@echo "... depend"
-	@echo "... install"
-	@echo "... list_install_components"
-	@echo "... rebuild_cache"
-	@echo "... install/strip"
-	@echo "... install/local"
 	@echo "... edit_cache"
 	@echo "... ORB_TEST"
-	@echo "... SIFT"
-	@echo "... rs-grabcuts"
-	@echo "... rs-latency-tool"
-	@echo "... rs-dnn"
-	@echo "... rs-depth-filter"
+	@echo "... rebuild_cache"
+	@echo "... ORB.o"
+	@echo "... ORB.i"
+	@echo "... ORB.s"
+	@echo "... ORBclass.o"
+	@echo "... ORBclass.i"
+	@echo "... ORBclass.s"
+	@echo "... oFAST.o"
+	@echo "... oFAST.i"
+	@echo "... oFAST.s"
+	@echo "... rBRIEF.o"
+	@echo "... rBRIEF.i"
+	@echo "... rBRIEF.s"
 .PHONY : help
 
 

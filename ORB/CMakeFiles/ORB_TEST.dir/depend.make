@@ -273,7 +273,9 @@ CMakeFiles/ORB_TEST.dir/oFAST.cpp.o: /opt/ros/kinetic/include/opencv-3.3.1-dev/o
 CMakeFiles/ORB_TEST.dir/oFAST.cpp.o: /opt/ros/kinetic/include/opencv-3.3.1-dev/opencv2/xfeatures2d/cuda.hpp
 CMakeFiles/ORB_TEST.dir/oFAST.cpp.o: /opt/ros/kinetic/include/opencv-3.3.1-dev/opencv2/xfeatures2d/nonfree.hpp
 
+CMakeFiles/ORB_TEST.dir/rBRIEF.cpp.o: ORBclass.h
 CMakeFiles/ORB_TEST.dir/rBRIEF.cpp.o: rBRIEF.cpp
+CMakeFiles/ORB_TEST.dir/rBRIEF.cpp.o: rBRIEF.h
 CMakeFiles/ORB_TEST.dir/rBRIEF.cpp.o: /opt/ros/kinetic/include/opencv-3.3.1-dev/opencv/cxcore.h
 CMakeFiles/ORB_TEST.dir/rBRIEF.cpp.o: /opt/ros/kinetic/include/opencv-3.3.1-dev/opencv2/calib3d.hpp
 CMakeFiles/ORB_TEST.dir/rBRIEF.cpp.o: /opt/ros/kinetic/include/opencv-3.3.1-dev/opencv2/calib3d/calib3d_c.h

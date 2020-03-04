@@ -5,7 +5,7 @@ cmake_minimum_required(VERSION 3.1.0)
 
 project(ORB_TEST)
 
-add_executable(ORB_TEST oFAST.cpp rBRIEF.cpp ORBclass.cpp ORB.cpp)
+add_executable(ORB_TEST matcher.cpp oFAST.cpp rBRIEF.cpp ORBclass.cpp ORB.cpp)
 ADD_COMPILE_OPTIONS(-g)
 set_property(TARGET ORB_TEST PROPERTY CXX_STANDARD 11)
 target_link_libraries(ORB_TEST ${DEPENDENCIES})

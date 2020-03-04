@@ -17,11 +17,13 @@ public:
 
 class FingerPrint{
 public:
-    std::vector<int>    list;
-    int 				length;
+	int	*data;
+    int length;
 
     FingerPrint();
     void pushKey(int key);
     int getKey(int index);
+	void clear();
+
 };
 #endif

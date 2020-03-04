@@ -13,6 +13,6 @@
 
 using namespace cv;
 using namespace std;
-void rBRIEF(cv::Mat** imgPyr, vector<Feature> keyPlist, vector<FingerPrint> FP);
+void rBRIEF(cv::Mat** imgPyr, vector<Feature> *keyPlist, vector<FingerPrint> *FP);
 
 #endif
